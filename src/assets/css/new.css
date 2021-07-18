@@ -1,0 +1,93 @@
+h3.card-title {
+    font-family: segoe;
+    font-size:20px;
+    color:#000 !important;
+}
+h6.col-form-label{
+    color:#000;
+}
+.card h5{
+    color: #000;
+}
+.navbar-brand{
+    font-family: segoe;
+    font-weight: bold;
+}
+.abc{
+    margin:0;
+}
+.name-nav{
+    font-family: segoe;
+    font-weight: 200;
+    font-size:12px;
+}
+.name-campany{
+    font-weight: bold !important;
+    font-family: segoe;
+    font-size: 20px;
+}
+.abc{
+    background: #ffffff;
+    box-shadow: 0 1px 15px 0 rgb(123 123 123 / 5%);
+    color:#000;
+}
+.abc th,.abc td{
+    color:#000 !important;
+}
+.form-control{
+    color: #000;
+}
+.text-fix{
+    max-height: none !important;
+    color: #000 !important;
+}
+.form-control{
+    color: #000 !important;
+}
+.center-box{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.content{
+    background: rgb(255 255 255 / 95%) !important;
+}
+.vv{
+    background: rgba(32, 32, 32, 0.911) !important;
+}
+.re{
+    width: 100%;
+    height:100vh;
+}
+.card-user{
+    background:#fff;
+}
+.card label{
+    color: #000;
+}
+.form-control[disabled]{
+    background: rgb(91 91 91 / 71%);
+}
+.nav-link{
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction:column;
+}
+.modal.show .modal-dialog{
+    transform: translate(0, 0);
+}
+.card{
+    background: #fff;
+    color: #000;
+    
+}
+.card--new{
+    font-family: "Times New Roman", Times, serif;
+}
+@media (min-width: 576px){
+    .modal-dialog {
+        max-width: 900px;
+        margin: 1.75rem auto;
+    }
+}
