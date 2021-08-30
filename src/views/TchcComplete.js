@@ -13,45 +13,54 @@ import CardHeader from "reactstrap/lib/CardHeader";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import SockJS from "sockjs-client";
-import Stomp from "stompjs"
-class Director extends Component {
+import Stomp from "stompjs";
+import PrintModal from "./PrintModal";
+class TchcComplete extends Component {
   constructor(props) {
     super(props);
     this.state = {
       dataReques: [],
-      dataSet:0,
-      code: JSON.parse(localStorage.getItem("code"))
+      dataSet: 0,
+      code: JSON.parse(localStorage.getItem("code")),
+      a: false,
+      isShowModal: false,
+      dataUse: [],
+      dataDate: [],
     };
   }
   componentDidMount() {
-    this._fetchData()
-    this._listenAddRequest()
+    console.log("ahhihi");
+    this._fetchData();
+    this._listenAddRequest();
   }
 
+  _listenAddRequest = () => {
+    let self = this;
+    const { code } = this.state;
+    const socket = new SockJS("http://localhost:8989/sock-data");
+    const stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (connectionData) {
+      console.log("connect-ahihi", connectionData);
+      stompClient.subscribe("/data/request/" + code, function (data) {
+        self._fetchData();
+      });
+    });
+  };
+  _ok = (data) => {
+    console.log("ok");
+  };
+
   componentDidUpdate(prevState) {
-    if(prevState.dataSet !== this.state.dataSet){
-      if(this.state.dataSet === 1){
-        this._fetchData()
+    if (prevState.dataSet !== this.state.dataSet) {
+      if (this.state.dataSet === 1) {
+        this._fetchData();
       }
     }
   }
 
-  _listenAddRequest = () => {
-    let self = this
-    const { code } = this.state
-    const socket = new SockJS('http://localhost:8989/sock-data')
-    const stompClient = Stomp.over(socket)
-    stompClient.connect({},function(connectionData){
-      console.log('connect-ahihi',connectionData);
-      stompClient.subscribe('/data/request/' + code, function(data){
-        self._fetchData()
-      })
-    })
-  }
-
   _fetchData = async () => {
     await axios
-      .get("/request/not-handled", {
+      .get("/request/get-all-request-finish", {
         headers: {
           "Content-Type": "application/json",
           Authorization: JSON.parse(localStorage.getItem("authorization")),
@@ -59,18 +68,16 @@ class Director extends Component {
       })
       .then((response) => {
         console.log("res", response);
-        this.setState({ dataRequest: response.data,dataSet:0 });
+        this.setState({ dataRequest: response.data, dataSet: 0 });
       })
       .catch(function (error) {
         console.log(error);
       });
   };
-
+  //view date
   _viewCreatedDate = (date) => {
     //view status
-    console.log("Day", date);
     var d = new Date(date);
-    console.log("date", d);
     var month = "" + (d.getMonth() + 1);
     var day = "" + d.getDate();
     var year = d.getFullYear();
@@ -86,6 +93,10 @@ class Director extends Component {
         return "Chờ trưởng phòng duyệt";
       case "WAIT_DIRECTOR":
         return "Chờ giám đốc duyệt";
+      case "FIXING":
+        return "Bộ phận kỹ thuật xử lý";
+      case "FINISHED":
+        return "Đã xử lý";
       default:
         break;
     }
@@ -101,22 +112,22 @@ class Director extends Component {
       })
       .then((res) => {
         console.log("ok", res);
-        if(res.status === 200){
-          toast.success("Từ chối thành công")
+        if (res.status === 200) {
+          toast.success("Từ chối thành công");
           this.setState({
-            dataSet:1
-          })
+            dataSet: 1,
+          });
         }
       })
       .catch((err) => {
         console.log("fail", err.response);
-        toast.error("Từ chối thất bại")
+        toast.error("Từ chối thất bại");
       });
   };
   //accept request
   _acceptRequest = async (code) => {
     await axios
-      .put("/request/approve/" + code, {
+      .post(`/request/fixer-finish-request?request=${code}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: JSON.parse(localStorage.getItem("authorization")),
@@ -124,16 +135,33 @@ class Director extends Component {
       })
       .then((res) => {
         console.log("ok", res);
-        toast.success("Duyệt thành công")
-        this.setState({
-          dataSet:1
-        })
+        if (res.status === 200) {
+          toast.success("Duyệt thành công");
+          this._fetchData();
+        }
       })
       .catch((err) => {
         console.log("fail", err.response);
-        toast.error("Duyệt thất bại")
+        toast.error("Duyệt thất bại");
       });
   };
+
+  _setDataModal = (data) => {
+    const dateNow = new Date();
+    let month = "" + (dateNow.getMonth() + 1);
+    let day = "" + dateNow.getDate();
+    let year = dateNow.getFullYear();
+
+    if (month.length < 2) month = "0" + month;
+    if (day.length < 2) day = "0" + day;
+
+    this.setState({
+      isShowModal: true,
+      dataUse: data,
+      dataDate: {...this.state.dataDate,day, month, year}
+    });
+  };
+
   _viewDataRequest = () => {
     const { dataRequest } = this.state;
     if (dataRequest && dataRequest.length > 0) {
@@ -148,18 +176,10 @@ class Director extends Component {
             <td>
               <Button
                 size="sm"
-                onClick={() => this._cancelRequest(data.code)}
-                color="danger"
-                className="mr-2"
-              >
-                Từ chối
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => this._acceptRequest(data.code)}
+                onClick={() => this._setDataModal(data)}
                 color="success"
               >
-                Duyệt
+                In
               </Button>
             </td>
           </tr>
@@ -167,7 +187,10 @@ class Director extends Component {
       });
     }
   };
+
   render() {
+    console.log("state", this.state);
+    const { isShowModal, dataUse } = this.state
     return (
       <div style={{ background: "LightCyan" }} className="content">
         <ToastContainer />
@@ -199,9 +222,16 @@ class Director extends Component {
             </Card>
           </Col>
         </Row>
+        {isShowModal && (
+          <PrintModal
+            isShowModal={isShowModal}
+            toggleModal={() => this.setState({ isShowModal: !isShowModal })}
+            data={dataUse}
+          />
+        )}
       </div>
     );
   }
 }
 
-export default Director;
+export default TchcComplete;

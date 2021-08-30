@@ -1,15 +1,11 @@
 
 import React from "react";
 import axios from 'axios';
-// react plugin for creating notifications over the dashboard
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import TableRowCheck from "components/TableRow/TableRowcheck.js";
 import {Redirect } from "react-router-dom";
 import Stomp from "stompjs"
-//import history from "history.js";
-// reactstrap components
-//import { Card, CardHeader, CardBody, Row, Col } from "reactstrap";
 import {  
   Button,
   Card,
@@ -20,8 +16,6 @@ import {
   Label,
   Input,
   FormGroup,
-  FormText,
-  CustomInput,
   Table,
   Col
 } from "reactstrap";
@@ -59,7 +53,6 @@ class Map extends React.Component {
         .then(response => {
             console.log(response.data.listtheme);
             this.setState({datalist: response.data.listtheme});
-            console.log('daaaaaaaaaaaaaaaaaaaaaa');
             console.log(this.getFirstTheme());
             
         })
@@ -86,9 +79,11 @@ class Map extends React.Component {
           console.log("Res",res);
           if(res.status===201)
           {           
-            console.log('yess');
             toast.success('Thành công')
-
+            this.setState({
+              reason:'',
+              solution:''
+            })
           }
           else{
             toast.error('Lỗi')
@@ -161,8 +156,8 @@ class Map extends React.Component {
                   <FormGroup>
                     <Label tag="h5">Lý Do</Label>
                     <Input 
-                      value={this.state.reason} 
-                      onChange={this.onchangValue} 
+                      value={this.state.reason}
+                      onChange={this.onchangValue}
                       type="textarea" 
                       name="reason"
                       className="text-fix"
@@ -173,8 +168,8 @@ class Map extends React.Component {
                   <FormGroup>
                     <Label tag="h5">Nội dung đề xuất</Label>
                     <Input 
-                      value={this.state.solution} 
-                      onChange={this.onchangValue} 
+                      value={this.state.solution}
+                      onChange={this.onchangValue}
                       type="textarea" 
                       name="solution" 
                       id=""

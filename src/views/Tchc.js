@@ -14,21 +14,33 @@ import Button from "reactstrap/lib/Button";
 import CardHeader from "reactstrap/lib/CardHeader";
 import axios from "axios";
 import PrintModal from "./PrintModal";
+import { toast, ToastContainer } from "react-toastify";
+import SockJS from "sockjs-client";
+import Stomp from "stompjs"
+
 
 class Tchc extends Component {
   constructor(props) {
     super(props);
+    this.onChangeValue = this.onChangeValue.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
     this.state = {
       trangthai: false,
       dataReques: [],
       dataSet: 0,
       isShowModal: false,
       dataUse: [],
-      dataDate: []
+      dataDate: [],
+      dataEdit: [],
+      dataDepartment:[],
+      department:'',
+      code: JSON.parse(localStorage.getItem("code"))
     };
   }
   componentDidMount() {
-    this._fetchData();
+    this._fetchData()
+    this._getDepartment()
+    this._listenAddRequest()
   }
   // componentDidUpdate(prevState) {
   //   if(prevState.dataSet !== this.state.dataSet){
@@ -37,6 +49,19 @@ class Tchc extends Component {
   //     }
   //   }
   // }
+
+  _listenAddRequest = () => {
+    let self = this
+    const { code } = this.state
+    const socket = new SockJS('http://localhost:8989/sock-data')
+    const stompClient = Stomp.over(socket)
+    stompClient.connect({},function(connectionData){
+      console.log('connect-ahihi',connectionData);
+      stompClient.subscribe('/data/request/' + code, function(data){
+        self._fetchData()
+      })
+    })
+  }
 
   _fetchData = async () => {
     await axios
@@ -53,7 +78,24 @@ class Tchc extends Component {
       .catch(function (error) {
         console.log(error);
       });
-  };
+  }
+
+  _getDepartment = async() =>{
+    await axios
+      .get("/department/fix-room", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: JSON.parse(localStorage.getItem("authorization")),
+        },
+      })
+      .then((response) => {
+        console.log("res", response);
+        this.setState({ dataDepartment: response.data})
+      })
+      .catch(function (error) {
+        console.log(error)
+      });
+  }
 
   _viewCreatedDate = (date) => {
     //view status
@@ -84,7 +126,7 @@ class Tchc extends Component {
   };
 
   _viewDataRequest = () => {
-    const { dataRequest } = this.state;
+    const { dataRequest, trangthai} = this.state;
     if (dataRequest && dataRequest.length > 0) {
       return dataRequest.map((data, index) => {
         return (
@@ -95,7 +137,7 @@ class Tchc extends Component {
             <td>{this._viewCreatedDate(data.createdDate)}</td>
             <td>{this._viewStatus(data.status)}</td>
             <td>
-              <Button size="sm" onClick={this._doiTrangThai} color="success">
+              <Button size="sm" onClick={() => this._doiTrangThai(data)} color="info" className="mr-2" disabled={trangthai}>
                 Điều Phối
               </Button>
               <Button
@@ -130,8 +172,8 @@ class Tchc extends Component {
   };
 
   render() {
-    console.log("abc", this.state);
-    const { isShowModal, dataUse,dataDate } = this.state;
+    console.log('state',this.state);
+    const { isShowModal, dataUse } = this.state;
     return (
       <div style={{ background: "LightCyan" }} className="content">
         <Row>
@@ -152,6 +194,7 @@ class Tchc extends Component {
                       <th>Lý Do</th>
                       <th>Nội dung đề suất</th>
                       <th>Ghi Chú</th>
+                      <th>Tình Trạng</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -162,6 +205,7 @@ class Tchc extends Component {
           </Col>
           <Col md="4">{this._viewEdit()}</Col>
         </Row>
+        <ToastContainer />
         {isShowModal && (
           <PrintModal
             isShowModal={isShowModal}
@@ -173,13 +217,23 @@ class Tchc extends Component {
     );
   }
 
-  _doiTrangThai = () => {
+  _doiTrangThai = data => {
     this.setState({
       trangthai: !this.state.trangthai,
+      dataEdit: data
     });
   };
 
+  onChangeValue(event) {
+    var name = event.target.name;
+    var value = event.target.value;
+    this.setState({
+      [name]: value,
+    });
+}
+
   _viewEdit() {
+    const { dataEdit, dataDepartment } = this.state
     if (this.state.trangthai === true) {
       return (
         <Card className="abc">
@@ -190,43 +244,73 @@ class Tchc extends Component {
             <FormGroup>
               <Label tag="h5">Lý Do</Label>
               <Input
-                value="Hư Quạt"
-                onChange={this.onchangValue}
                 type="text"
-                name="authorname"
-                id=""
+                defaultValue={dataEdit.reason}
                 placeholder="nhập lý do nhu cầu sửa chữa"
+                disabled
+                className="new-disabled"
               />
             </FormGroup>
             <FormGroup>
               <Label tag="h5">Nội dung đề xuất</Label>
               <Input
-                value="Thay Quạt"
-                onChange={this.onchangValue}
                 type="text"
-                name="note"
-                id=""
+                defaultValue={dataEdit.solution}
                 placeholder="Muốn làm gì với thiết bị đó"
+                className="new-disabled"
+                disabled
               />
             </FormGroup>
             <FormGroup>
               <Label tag="h5">Chọn Bộ Phận Kỹ Thuật</Label>
-              <Input type="select" name="select" id="exampleSelect">
-                <option>Kỹ Thuật 1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
+              <Input 
+              type="select" 
+              name="department" 
+              id="exampleSelect"
+              onChange = {this.onChangeValue}
+              >
+                <option>None</option>
+                {dataDepartment.map((data,index)=>{
+                  return <option value={data.code} key={index}>{data.name}</option>
+                })}
               </Input>
             </FormGroup>
             <Button color="success" onClick={this.onSubmit}>
               Xác Nhận
             </Button>
-            <Button onClick={this._doiTrangThai}>Thoát</Button>
+            <Button onClick={() => this._doiTrangThai()}>Thoát</Button>
           </CardBody>
         </Card>
       );
     }
+  }
+
+  onSubmit = async event =>{
+    event.preventDefault()
+    const { department, dataEdit } = this.state
+    if(department===''){
+      toast.info("Hãy chọn bộ phận kỹ thuật muốn điều phối!")
+    }
+    else{
+      const  request = dataEdit.code
+      await axios
+        .post(`/request/tchc/assign-request?department=${department}&request=${request}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: JSON.parse(localStorage.getItem("authorization")),
+          },
+        })
+        .then((res) => {
+          toast.success("Duyệt thành công")
+          this._fetchData()
+          this.setState({trangthai:false})
+        })
+        .catch((err) => {
+          console.log("fail", err.response);
+          toast.error("Duyệt thất bại")
+        });
+    }
+    
   }
 
   _viewDataPrint = () => {

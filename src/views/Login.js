@@ -58,6 +58,10 @@ class Login extends Component {
               history.push("/tchc");
             } else if (res.data.account.roles === "DIRECTOR") {
               history.push("/director");
+            } else if (res.data.account.roles === "FIXER") {
+              console.log('ahihihi');
+              history.push("/fix");
+
             }
           } else {
             alert("sai pass rồi hoac tài khoản rồi !!!");

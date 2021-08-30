@@ -13,21 +13,14 @@ import {
   Button,
   Label,
 } from "reactstrap";
-// reactstrap components
-//import { Card, CardHeader, CardBody, Row, Col } from "reactstrap";
 import TableDepartment from "components/TableRow/TableDepartment.js";
 import { ToastContainer, toast } from "react-toastify";
-import { Redirect } from "react-router-dom";
 class Department extends Component {
     constructor(props) {
         super(props);
         this.onChangeValue = this.onChangeValue.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
         this.onSubmitEdit = this.onSubmitEdit.bind(this);
-        // this.onSelectValue = this.onSelectValue.bind(this);
-        // this.onSubmitEdit = this.onSubmitEdit.bind(this);
-        // this.onChangeNewName= this.onChangeNewName.bind(this);
-        // this.onSubmitEditUser=this.onSubmitEditUser.bind(this);
         this.state = {
           code:'',
           name:'',

@@ -1,8 +1,7 @@
 
 import Notifications from "views/Notifications.js";
 import Maps from "views/Map.js"
-import Manager from "views/Manager.js";
-import test from "views/test.js";
+import RequestFail from "views/RequestFail.js";
 var routesuser = [
   {
     path: "/qlkn",
@@ -18,6 +17,14 @@ var routesuser = [
     rtlName: "إخطارات",
     icon: "tim-icons icon-bell-55",
     component: Maps,
+    layout: "/user"
+  },
+  {
+    path: "/fail",
+    name: "Yêu cầu thất bại",
+    rtlName: "إخطارات",
+    icon: "tim-icons icon-bell-55",
+    component: RequestFail,
     layout: "/user"
   },
 ];

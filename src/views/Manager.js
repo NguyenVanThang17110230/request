@@ -152,7 +152,7 @@ class Manager extends Component {
             <td>{this._viewCreatedDate(data.createdDate)}</td>
             <td>{this._viewStatus(data.status)}</td>
             <td>
-              <Button size="sm" onClick={()=> this._cancelRequest(data.code)} color="danger">
+              <Button size="sm" onClick={()=> this._cancelRequest(data.code)} color="danger" className="mr-2">
                 Từ chối
               </Button>
               <Button size="sm" onClick={()=>this._acceptRequest(data.code)} color="success">

@@ -87,7 +87,6 @@ const PrintModal = (props) =>{
                     </button>
                     <ComponentToPrint data={data} dataDate={dataDate} ref={componentRef} />
                     </ModalBody>
-
                 </Modal>
             </div>
         );

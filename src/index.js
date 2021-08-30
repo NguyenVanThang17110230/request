@@ -8,6 +8,7 @@ import RTLLayout from "layouts/RTL/RTL.js";
 import ManagerLayout from "layouts/Manager/Manager.js";
 import TchcLayout from "layouts/TCHC/TCHC.js";
 import Director from "layouts/Director/Director.js";
+import Fix from "layouts/Fix/Fix.js";
 
 import "assets/scss/black-dashboard-react.scss";
 import "assets/demo/demo.css";
@@ -25,6 +26,7 @@ ReactDOM.render(
       <Route path="/manager" render={props => <ManagerLayout {...props} />} />
       <Route path="/tchc" render={props => <TchcLayout {...props} />} />
       <Route path="/director" render={props => <Director {...props} />} />
+      <Route path="/fix" render={props => <Fix {...props} />} />
       <Route path="/login" component={Login}/>
       
       <Redirect from="/" to="/login"/>

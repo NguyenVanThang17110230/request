@@ -1,11 +1,4 @@
-import React from "react";
-import axios from "axios";
-// react plugin for creating notifications over the dashboard
-import NotificationAlert from "react-notification-alert";
-import "react-toastify/dist/ReactToastify.css";
-import { Redirect } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-// reactstrap components
+import React, { Component } from "react";
 import {
   Card,
   CardBody,
@@ -17,28 +10,93 @@ import {
   Col,
   Modal,
   ModalHeader,
-  ModalBody
+  ModalBody,
 } from "reactstrap";
-import CardHeader from "reactstrap/lib/CardHeader";
 import Button from "reactstrap/lib/Button";
+import CardHeader from "reactstrap/lib/CardHeader";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
 
-class Notifications extends React.Component {
+class RequestFail extends Component {
   constructor(props) {
     super(props);
     this.onSubmit = this.onSubmit.bind(this);
     this.onchangValue = this.onchangValue.bind(this);
     this.state = {
-      dataRequest: [],
-      isEdit:false,
+      dataReques: [],
+      dataSet: 0,
+      code: JSON.parse(localStorage.getItem("code")),
+      a: false,
+      isEdit: false,
       codeEdit: '',
       reason:'',
       solution:''
     };
   }
-
   componentDidMount() {
+    console.log("ahhihi");
     this._fetchData();
+    this._listenAddRequest();
   }
+
+  _listenAddRequest = () => {
+    let self = this;
+    const { code } = this.state;
+    const socket = new SockJS("http://localhost:8989/sock-data");
+    const stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (connectionData) {
+      console.log("connect-ahihi", connectionData);
+      stompClient.subscribe("/data/request/" + code, function (data) {
+        self._fetchData();
+      });
+    });
+  };
+
+  componentDidUpdate(prevState) {
+    if (prevState.dataSet !== this.state.dataSet) {
+      if (this.state.dataSet === 1) {
+        this._fetchData();
+      }
+    }
+  }
+
+  _fetchData = async () => {
+    await axios
+      .get("/request/get-all-request-faild-by-employee", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: JSON.parse(localStorage.getItem("authorization")),
+        },
+      })
+      .then((response) => {
+        console.log("res", response);
+        this.setState({ dataRequest: response.data, dataSet: 0 });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+  //view date
+  _viewCreatedDate = (date) => {
+    //view status
+    var d = new Date(date);
+    var month = "" + (d.getMonth() + 1);
+    var day = "" + d.getDate();
+    var year = d.getFullYear();
+
+    if (month.length < 2) month = "0" + month;
+    if (day.length < 2) day = "0" + day;
+
+    return [day, month, year].join("-");
+  };
+
+  _changeStatus = () => {
+    this.setState({
+      isEdit: !this.state.isEdit,
+    });
+  };
 
   onchangValue(event){
     var name = event.target.name;
@@ -47,12 +105,6 @@ class Notifications extends React.Component {
       [name]: value
     })
   }
-
-  _changeStatus = () => {
-    this.setState({
-      isEdit: !this.state.isEdit,
-    });
-  };
 
   _viewModalEdit = () => {
     const { isEdit, reason, solution } = this.state;
@@ -123,49 +175,23 @@ class Notifications extends React.Component {
 
   }
 
-  _fetchData = async () => {
-    await axios
-      .get("/request/not-handled",{
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: JSON.parse(localStorage.getItem("authorization")),
-        },
-      })
-      .then((response) => {
-        console.log("res", response);
-        this.setState({ dataRequest: response.data });
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  };
-  //view date
-  _viewCreatedDate = date =>{
-  //view status
-  console.log("Day",date);
-  var d = new Date(date)
-  console.log("date",d);
-  var month = '' + (d.getMonth() + 1)
-  var day = '' + d.getDate()
-  var year = d.getFullYear()
-
-  if (month.length < 2) 
-      month = '0' + month;
-  if (day.length < 2) 
-      day = '0' + day;
-
-    return [day,month,year].join('-');
-  }
-  _viewStatus = status =>{
+  _viewStatus = (status) => {
     switch (status) {
-      case 'WAIT_MANAGER':
-        return "Chờ trưởng phòng duyệt"
-      case 'WAIT_DIRECTOR':
-        return "Chờ giám đốc duyệt"
+      case "WAIT_MANAGER":
+        return "Chờ trưởng phòng duyệt";
+      case "WAIT_DIRECTOR":
+        return "Chờ giám đốc duyệt";
+      case "FIXING":
+        return "Bộ phận kỹ thuật xử lý";
+      case "FINISHED":
+        return "Đã xử lý";
+      case "FAILED":
+        return "Cần chỉnh sửa";
       default:
         break;
     }
-  }
+  };
+  //cancel request
   _updateRequest = async (data) => {
     this.setState({
       isEdit: true,
@@ -174,13 +200,35 @@ class Notifications extends React.Component {
       codeEdit: data.code
     });
   };
+  //accept request
+  _acceptRequest = async (code) => {
+    await axios
+      .post("/request/resend/" + code, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: JSON.parse(localStorage.getItem("authorization")),
+        },
+      })
+      .then((res) => {
+        console.log("ok", res);
+        if (res.status === 200) {
+          toast.success("Duyệt thành công");
+          this._fetchData();
+        }
+      })
+      .catch((err) => {
+        console.log("fail", err.response);
+        toast.error("Duyệt thất bại");
+      });
+  };
+
   _viewDataRequest = () => {
     const { dataRequest } = this.state;
     if (dataRequest && dataRequest.length > 0) {
       return dataRequest.map((data, index) => {
         return (
           <tr key={index}>
-            <td>{index+1}</td>
+            <td>{index + 1}</td>
             <td>{data.reason}</td>
             <td>{data.solution}</td>
             <td>{this._viewCreatedDate(data.createdDate)}</td>
@@ -194,6 +242,13 @@ class Notifications extends React.Component {
               >
                 Chỉnh sửa
               </Button>
+              <Button
+                size="sm"
+                onClick={() => this._acceptRequest(data.code)}
+                color="success"
+              >
+                Gửi yêu cầu
+              </Button>
             </td>
           </tr>
         );
@@ -202,12 +257,10 @@ class Notifications extends React.Component {
   };
 
   render() {
-    if (!localStorage.getItem("authorization")) return <Redirect to="/login" />;
+    console.log("state", this.state);
     return (
       <div style={{ background: "LightCyan" }} className="content">
-        <div className="react-notification-alert-container">
-          <NotificationAlert ref="notificationAlert" />
-        </div>
+        <ToastContainer />
         <Row>
           <Col md="10">
             <Card className="abc">
@@ -237,10 +290,9 @@ class Notifications extends React.Component {
           </Col>
         </Row>
         {this._viewModalEdit()}
-        <ToastContainer />
+        
       </div>
     );
   }
 }
-
-export default Notifications;
+export default RequestFail;
