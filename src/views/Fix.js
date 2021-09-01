@@ -39,6 +39,7 @@ class Fix extends Component {
       console.log("connect-ahihi", connectionData);
       stompClient.subscribe("/data/request/" + code, function (data) {
         self._fetchData();
+        toast.success("Có 1 yêu cầu mới!")
       });
     });
   };
